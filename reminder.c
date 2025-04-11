@@ -6,6 +6,7 @@
 
 typedef char * string;
 
+
 // error hendling;
 
 typedef enum {
@@ -36,7 +37,7 @@ typedef struct {
 // typedef enum {Minggu, Senin, Selasa, Rabu, Kamis, Jumat, Sabtu} Eind_DAY;
 // char *hari[] = 
 typedef enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday} Een_DAY;
-char *wday[7] = {"minggu", "senin", "selasa", "rabu", "kamis", "jumat","sabtu"};
+char *wday[7] = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
 char *mon[12] = {
     "January", "February", "March", "April", "Mey", "June", 
     "July", "August", "September", "October", "November", "Decembar"
@@ -45,8 +46,11 @@ char *mon[12] = {
 void add(char *argv[], int argc, time_t now_time) {
     struct tm user_time = *localtime(&now_time);
     Reminder new_reminder;
+    new_reminder.date = user_time.tm_mday;
     new_reminder.month = user_time.tm_mon + 1;
     new_reminder.year = user_time.tm_year + 1900;
+
+    char singleWord_flag = 0;
 
     // reminder add "teks" time_setter;
     // [0]      [1]  [2]     [3]
@@ -88,40 +92,70 @@ void add(char *argv[], int argc, time_t now_time) {
                 }
            } 
            
-           // TODO: make the mechanism bro.
-           else if(1){}
+            // week day word
+            else {
+                int nextWeek_flag = 0;
+                while(date_arg[nextWeek_flag] == '+') {
+                    nextWeek_flag++;
+                }
+                date_arg = date_arg + nextWeek_flag;
+
+                for(int i=0; i<7; i++) {
+                    if (strcmp(date_arg, wday[i]) == 0) {
+                        if (nextWeek_flag) {
+                            user_time.tm_mday = user_time.tm_mday + ((7*nextWeek_flag) - (user_time.tm_wday + 1) + (i + 1));
+                            mktime(&user_time);
+                            new_reminder.date = user_time.tm_mday;
+                            new_reminder.month = user_time.tm_mon+1;
+                            new_reminder.year = user_time.tm_year + 1900;
+                        }
+                        else if(i < user_time.tm_wday) {
+                            usage(argv, BAD_CONTROLER);
+                        }
+                        user_time.tm_mday = user_time.tm_mday + (i - user_time.tm_wday);
+                        mktime(&user_time);
+
+                        /*this one possibly may exceed the day of the month or year so
+                        it's not wise to combine with month-year number setter time for
+                        they can make collision data or unexpected behavior,
+                        so we have to prevent it using singleWord_flag*/
+
+                        singleWord_flag = 1;
+                        break;
+                    }
+                }
         }
 
-        // if argc >= 5 then it spesify the month or more spesific its motnh and year
-        if (argc >= 5) {
-            char *month_arg = argv[4];
-            char month;
-            if ((month = atoi(month_arg)) != 0) {
-                if (month < user_time.tm_mon+1) {
-                    usage(argv, BAD_CONTROLER);
+        }
+
+        if (singleWord_flag && argc >= 5) {
+            usage(argv, BAD_CONTROLER);
+        }
+        else {
+
+            // if argc >= 5 then it spesify the month or more spesific its motnh and year
+            if (argc >= 5) {
+                char *month_arg = argv[4];
+                char month;
+                if ((month = atoi(month_arg)) != 0) {
+                    if (month < user_time.tm_mon+1) {
+                        usage(argv, BAD_CONTROLER);
+                    }
+                    new_reminder.month = month;
                 }
-                new_reminder.month = month;
+            }
+    
+            if (argc >= 6) {
+                char *year_arg = argv[5];
+                int year;
+                if ((year = atoi(year_arg)) != 0) {
+                    if (year < user_time.tm_year + 1900) {
+                        usage(argv, BAD_CONTROLER);
+                    }
+                    new_reminder.year = year;
+                } 
             }
         }
-
-        if (argc >= 6) {
-            char *year_arg = argv[5];
-            int year;
-            if ((year = atoi(year_arg)) != 0) {
-                if (year < user_time.tm_year + 1900) {
-                    usage(argv, BAD_CONTROLER);
-                }
-                new_reminder.year = year;
-            } 
-        }
-        
-
-        // using single word
-        // using wday word
-
-    }
-    else {
-        // today time value as default
     }
 
     printf("time %d-%d-%d\n", new_reminder.date, new_reminder.month, new_reminder.year);
@@ -186,4 +220,5 @@ void usage(char *argv[], E_ERROR_FLAG flag) {
     }
 
     // TODO: free after error;
+    //
 }
