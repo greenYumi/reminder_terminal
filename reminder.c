@@ -97,20 +97,25 @@ void add(char *argv[], int argc, time_t now_time) {
                         }
 
                         if (year > user_time.tm_year + 1900) {
+
                             user_time.tm_year = year - 1900;
                             user_time.tm_mon = month - 1;
                             user_time.tm_mday = date;
                             mktime(&user_time);
-                            
-                            new_reminder.year = user_time.tm_year + 1900;
-                            new_reminder.month = user_time.tm_mon + 1;
-                            new_reminder.date = user_time.tm_mday;
-
+                        }
+                        
+                        if (month < user_time.tm_mon + 1) {
+                            usage(argv, BAD_CONTROLLER, "month can't below the current month");
                         }
 
-                    } else {
+                        new_reminder.year = user_time.tm_year + 1900;
+                        new_reminder.month = user_time.tm_mon + 1;
+                        new_reminder.date = user_time.tm_mday;
+
+                    } 
+                    else {
                         if (month < user_time.tm_mon + 1) {
-                            usage(argv, BAD_CONTROLLER, "year can't below the current year");
+                            usage(argv, BAD_CONTROLLER, "month can't below the current month");
                         }
 
                         if (month >= user_time.tm_mon +1){
@@ -232,36 +237,6 @@ void add(char *argv[], int argc, time_t now_time) {
             }
         }
 
-        if (singleWord_flag) {
-            if (argc >= 5) {
-            usage(argv, BAD_CONTROLLER, "can't using weekday word setter and month-year setter simultaneously");
-        }
-        }
-        else {
-
-            // if argc >= 5 then it spesify the month or more spesific its motnh and year
-            if (argc >= 5) {
-                char *month_arg = argv[4];
-                char month;
-                if ((month = atoi(month_arg)) != 0) {
-                    if (month < user_time.tm_mon+1) {
-                        usage(argv, BAD_CONTROLLER, "can't set the month before curent month");
-                    }
-                    new_reminder.month = month;
-                }
-            }
-    
-            if (argc >= 6) {
-                char *year_arg = argv[5];
-                int year;
-                if ((year = atoi(year_arg)) != 0) {
-                    if (year < user_time.tm_year + 1900) {
-                        usage(argv, BAD_CONTROLLER, "can't set the year before curent year");
-                    }
-                    new_reminder.year = year;
-                } 
-            }
-        }
     }    
 }
 printf("time %d-%d-%d\n", new_reminder.date, new_reminder.month, new_reminder.year);
