@@ -43,200 +43,127 @@ char *mon[12] = {
     "July", "August", "September", "October", "November", "December"
 };
 
+
+Reminder add_date(int argc, char *argv[], struct tm user_time, char *date_arg);
+
+
 void add(char *argv[], int argc, time_t now_time) {
     struct tm user_time = *localtime(&now_time);
     Reminder new_reminder;
-    new_reminder.date = user_time.tm_mday;
-    new_reminder.month = user_time.tm_mon + 1;
-    new_reminder.year = user_time.tm_year + 1900;
 
-    char singleWord_flag = 0;
 
     // reminder add "teks" time_setter;
     // [0]      [1]  [2]     [3]
     
     if (argc > 2) {
-        // using number
         
         // reminder add "teks" date[3] month[4] year[5];
         if (argc >= 4) {
-            /* 
-                argc 4 or argv 3, has 3 possibility
+
+            /* argc 4 or argv 3, has 3 possibility
                 - it means the date
                 - it means using single word controler
-                - it means using weekday word
-            */
-           char *date_arg = argv[3];
-           int date;
+                - it means using weekday word */
 
-           // date
-           if ((date = atoi(date_arg)) != 0 && date_arg[0] != '+') {
-                if (date < 1 || date > 31) {
-                    usage(argv, BAD_CONTROLLER, "date range 1-31");
-                }
+            char *date_arg = argv[3];
 
-                if (argv[4] != NULL ) {
-
-                    int month = atoi(argv[4]);
-                    if (month == 0) {
-                        usage(argv, BAD_CONTROLLER,  "month should be a number");
-                    }
-                    if (month < 1 || month > 12) {
-                        usage(argv, BAD_CONTROLLER,  "month range 1-12");
-                    }
-
-
-                    if (argv[5] != NULL) {
-
-                        int year = atoi(argv[5]);
-                        if (year == 0) {
-                            usage(argv, BAD_CONTROLLER,  "year should be a number");
-                        }
-                        if (year < user_time.tm_year + 1900) {
-                            usage(argv, BAD_CONTROLLER,  "year can't below the current year");
-                        }
-
-                        if (year > user_time.tm_year + 1900) {
-
-                            user_time.tm_year = year - 1900;
-                            user_time.tm_mon = month - 1;
-                            user_time.tm_mday = date;
-                            mktime(&user_time);
-                        }
-                        
-                        if (month < user_time.tm_mon + 1) {
-                            usage(argv, BAD_CONTROLLER, "month can't below the current month");
-                        }
-
-                        new_reminder.year = user_time.tm_year + 1900;
-                        new_reminder.month = user_time.tm_mon + 1;
-                        new_reminder.date = user_time.tm_mday;
-
-                    } 
-                    else {
-                        if (month < user_time.tm_mon + 1) {
-                            usage(argv, BAD_CONTROLLER, "month can't below the current month");
-                        }
-
-                        if (month >= user_time.tm_mon +1){
-                            user_time.tm_mon = month - 1;
-                            user_time.tm_mday = date;
-                            mktime(&user_time);
-                            
-                            new_reminder.year = user_time.tm_year + 1900;
-                            new_reminder.month = user_time.tm_mon + 1;
-                            new_reminder.date = user_time.tm_mday;
-                        }
-                    }
-                    }
-
-                else {
-                    if (date < user_time.tm_mday) {
-                        usage(argv, BAD_CONTROLLER, "can't set date below the current date");
-                    }
-
-                    user_time.tm_mday = date;
-                    mktime(&user_time);
-
-                    new_reminder.year = user_time.tm_year + 1900;
-                    new_reminder.month = user_time.tm_mon + 1;
-                    new_reminder.date = user_time.tm_mday;
-                    
-                }
+            // date
+            if (atoi(date_arg) != 0 && date_arg[0] != '+') {
                 
-
-                if (date >= user_time.tm_mday) {
-                    user_time.tm_mday = date;
-                    mktime(&user_time);
-
-                    new_reminder.date = user_time.tm_mday;
-                } else {
-                    usage(argv, BAD_CONTROLLER, "Can't set date below current date");
-            }
-        }
+                    new_reminder = add_date(argc, argv, user_time, date_arg);
+                }
         
 
-        // single word 
-        else if (strcmp(date_arg, "tomorrow") == 0 || strcmp(date_arg, "dat") == 0) {
-            if (strcmp(date_arg, "tomorrow") == 0) {
-                user_time.tm_mday += 1;
-                mktime(&user_time);
-
-                new_reminder.date = user_time.tm_mday;
-            }
-            else if (strcmp(date_arg, "dat") == 0) {
-                user_time.tm_mday += 2;
-                mktime(&user_time);
-
-                new_reminder.date = user_time.tm_mday;
-            }
-        } 
-           
-        // week day word
-        else {
-            int nextWeek_flag = 0;
-            int i = 0;
-            if (date_arg[0] == '+') {
-                while(1) {
-                    if (date_arg[i] == '+') {
-                        nextWeek_flag++;
-                        i++;
-                        continue;
-                    }
-                    // FIXME: potentialy i become min value if +-wday setter given
-                    else if ( atoi(date_arg+i) != 0) {
-                        int weekStep = atoi(date_arg+i);
-                        nextWeek_flag += weekStep;
-                        i ++;
-                        
-                        // if there is more than 1 digit;
-                        while(weekStep / 10 != 0) {
-                            weekStep /= 10;
-                            i++;
-                        }
-                        continue;
-                    }
-                    break;
-                }
-            }
-            date_arg = date_arg + i;
-            if (strcmp(date_arg, "") == 0) {
-                usage(argv, BAD_CONTROLLER, "expected weekday name, given nothing");
-            }
-
-            for(int i=0; i<7; i++) {
-                if (strcmp(date_arg, wday[i]) == 0) {
-                    if (nextWeek_flag) {
-                        user_time.tm_mday = user_time.tm_mday + ((7*nextWeek_flag) - (user_time.tm_wday + 1) + (i + 1));
-                        mktime(&user_time);
-                        new_reminder.date = user_time.tm_mday;
-                        new_reminder.month = user_time.tm_mon+1;
-                        new_reminder.year = user_time.tm_year + 1900;
-                        
-                        singleWord_flag = 1;
-                        break;
-                    }
-                    else if(i < user_time.tm_wday) {
-                        usage(argv, BAD_CONTROLLER, "can't set the day before current day in current week");
-                    }
-                    user_time.tm_mday = user_time.tm_mday + (i - user_time.tm_wday);
+            // single word 
+            else if (strcmp(date_arg, "tomorrow") == 0 || strcmp(date_arg, "dat") == 0) {
+                if (strcmp(date_arg, "tomorrow") == 0) {
+                    user_time.tm_mday += 1;
                     mktime(&user_time);
 
-                    /*this one possibly may exceed the day of the month or year so
-                    it's not wise to combine with month-year number setter time for
-                    they can make collision data or unexpected behavior,
-                    so we have to prevent it using singleWord_flag*/
-                    singleWord_flag = 1;
-
-                    break;
-
+                    new_reminder.date = user_time.tm_mday;
                 }
-                else if (i == 6) {
-                    usage(argv, BAD_CONTROLLER, "weekday name not found");
+                else if (strcmp(date_arg, "dat") == 0) {
+                    user_time.tm_mday += 2;
+                    mktime(&user_time);
+
+                    new_reminder.date = user_time.tm_mday;
+                }
+            } 
+           
+            // week day word
+            else {
+                int nextWeek_flag = 0;
+                int i = 0;
+
+                if (date_arg[0] == '+') {
+                    
+                    while(1) {
+                        if (date_arg[i] == '+') {
+                            nextWeek_flag++;
+                            i++;
+                            continue;
+                        }
+                        else if ( atoi(date_arg+i) != 0) {
+                            int weekStep = atoi(date_arg+i);
+
+                            // prevent atoi produce min value
+                            if (weekStep < 0){
+                                weekStep *= -1;
+                                i++;
+                            }
+
+                            nextWeek_flag += weekStep;
+                            i++;
+                            
+                            // if atoi returned more than 1 digit;
+                            while(weekStep / 10 != 0) {
+                                weekStep /= 10;
+                                i++;
+                            }
+                            continue;
+                        }
+                        break;
+                    }
+                }
+
+                // offsiding the date_arg;
+                date_arg = date_arg + i;
+                if (strcmp(date_arg, "") == 0) {
+                    usage(argv, BAD_CONTROLLER, "expected weekday name, given nothing");
+                }
+
+
+                for(int i=0; i<7; i++) {
+
+                    if (strcmp(date_arg, wday[i]) == 0) {
+
+                        // if using + notation => {+monday, +2monday, ...}
+                        if (nextWeek_flag) {
+                            user_time.tm_mday = user_time.tm_mday + ((7*nextWeek_flag) - (user_time.tm_wday + 1) + (i + 1));
+                            mktime(&user_time);
+
+                            new_reminder.date = user_time.tm_mday;
+                            new_reminder.month = user_time.tm_mon+1;
+                            new_reminder.year = user_time.tm_year + 1900;
+                            
+                            break;
+                        }
+
+                        else if(i < user_time.tm_wday) {
+                            usage(argv, BAD_CONTROLLER, "can't set the day before current day in current week");
+                        }
+
+                        user_time.tm_mday = user_time.tm_mday + (i - user_time.tm_wday);
+                        mktime(&user_time);
+
+                        break;
+
+                    }
+                    else if (i == 6) {
+                        usage(argv, BAD_CONTROLLER, "weekday name not found");
+                    }
                 }
             }
-        }
-
     }    
 }
 printf("time %d-%d-%d\n", new_reminder.date, new_reminder.month, new_reminder.year);
@@ -265,7 +192,7 @@ int main(int argc, char *argv[]) {
 }
 
 
-void usage(char *argv[], E_ERROR_FLAG flag, String err_msg) { // TODO: tambah parameter (string err_msg);
+void usage(char *argv[], E_ERROR_FLAG flag, String err_msg) {
 
     /* NOTE:  before exit better free the heap*/
     fprintf(stderr, "%s: ", argv[0]);
@@ -296,3 +223,104 @@ void usage(char *argv[], E_ERROR_FLAG flag, String err_msg) { // TODO: tambah pa
     }
     
 } 
+
+
+Reminder add_date(int argc, char *argv[], struct tm user_time, char *date_arg) {
+    Reminder new_reminder;
+    new_reminder.date = user_time.tm_mday;
+    new_reminder.month = user_time.tm_mon + 1;
+    new_reminder.year = user_time.tm_year + 1900;
+
+    int date = atoi(date_arg);
+
+    if (date < 1 || date > 31) {
+        usage(argv, BAD_CONTROLLER, "date range 1-31");
+    }
+
+    if (argv[4] != NULL ) {
+
+        int month = atoi(argv[4]);
+
+        // validation month
+        if (month == 0) {
+            usage(argv, BAD_CONTROLLER,  "month should be a number");
+        }
+        if (month < 1 || month > 12) {
+            usage(argv, BAD_CONTROLLER,  "month range 1-12");
+        }
+
+        // priority process if year also given
+        if (argv[5] != NULL) {
+
+            // also valdation the year
+            int year = atoi(argv[5]);
+            if (year == 0) {
+                usage(argv, BAD_CONTROLLER,  "year should be a number");
+            }
+            if (year < user_time.tm_year + 1900) {
+                usage(argv, BAD_CONTROLLER,  "year can't below the current year");
+            }
+
+            // if year great than year now, then any number date and moth are valid;
+            if (year > user_time.tm_year + 1900) {
+                
+                user_time.tm_year = year - 1900;
+                user_time.tm_mon = month - 1;
+                user_time.tm_mday = date;
+                mktime(&user_time);
+
+                new_reminder.date = user_time.tm_mday;
+                new_reminder.month = user_time.tm_mon;
+                new_reminder.year = user_time.tm_year + 1900;
+
+                return new_reminder;
+            }    
+        }
+
+        // if the year is just the same, then we work with the month instead.
+        if (month < user_time.tm_mon + 1) {
+            usage(argv, BAD_CONTROLLER, "month can't below the current month");
+        }
+
+        if (month >= user_time.tm_mon +1){
+            user_time.tm_mon = month - 1;
+            user_time.tm_mday = date;
+            mktime(&user_time);
+            
+            new_reminder.year = user_time.tm_year + 1900;
+            new_reminder.month = user_time.tm_mon + 1;
+            new_reminder.date = user_time.tm_mday;
+            return new_reminder;
+        }
+    }
+    else {
+
+        if (date < user_time.tm_mday) {
+            usage(argv, BAD_CONTROLLER, "can't set date below the current date");
+        }
+
+        user_time.tm_mday = date;
+        mktime(&user_time);
+
+        new_reminder.year = user_time.tm_year + 1900;
+        new_reminder.month = user_time.tm_mon + 1;
+        new_reminder.date = user_time.tm_mday;
+        return new_reminder;
+        
+    }
+    
+    if (date >= user_time.tm_mday) {
+        user_time.tm_mday = date;
+        mktime(&user_time);
+
+        new_reminder.date = user_time.tm_mday;
+        return new_reminder;
+    }
+    else {
+        usage(argv, BAD_CONTROLLER, "Can't set date below current date");
+    }
+
+    // (should not reach here)
+    fprintf(stderr, "Unexpected execution path in add_date()\n");
+    return(Reminder){0};
+}
