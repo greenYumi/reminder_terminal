@@ -19,6 +19,7 @@ typedef enum {
 
 void usage(char *argv[], E_ERROR_FLAG, String err_msg);
 
+
 typedef struct {
     char note[100];
     int date;
@@ -34,80 +35,140 @@ typedef struct {
 
 // ### Utility
 
-int positif_atoi(char *string) {
-    size_t len = 0;
-
-    while (string[len] != '\0') {
-        len++;
+int date( char *date, time_t now_time, Reminder* new_reminder) {
+    if((date[0] < 48 || date[0] > 57) && (date[0] != '-')) {
+        return 0;
     }
 
-    int int_value = 0;
-    for (int i=0; i<len; i++) {
-        if (string[i] >= 48 && string[i] <= 57) {
-            int_value *= 10;
-            int_value += string[i] - '0';
-        } else {
+    struct tm time_info = *localtime(&now_time);
+    int ddmmyyyy[3] = {0, 0, 0};
+    int i,j;
+    i=j=0;
+
+    while(date[i] != '\0') {
+        if (date[i] == '-') {
+            if (j > 2) {
+                return 0;
+            }
+            j++;
+            i++;
+        }
+        else if(date[i] >= 48 && date[i] <= 57) {
+            ddmmyyyy[j] *= 10;
+            ddmmyyyy[j] += date[i] - '0';
+            i++;
+        }
+        else {
             return 0;
         }
     }
 
-    return int_value;
+    int date_arg, month_arg, year_arg;
+    date_arg = ddmmyyyy[0];
+    month_arg = ddmmyyyy[1];
+    year_arg = ddmmyyyy[2];
+
+    if (date_arg < 0 || date_arg  > 31) {
+        return 0;
+    }
+    if (month_arg < 0 || month_arg > 12) {
+        return 0;
+    }
+    if (year_arg != 0 && year_arg < time_info.tm_year + 1900) {
+        return 0;
+    }
+
+    if (year_arg > time_info.tm_year + 1900) {
+        time_info.tm_year  = year_arg - 1900;
+        time_info.tm_mon = (month_arg == 0) ? new_reminder->month - 1 : month_arg - 1;
+        time_info.tm_mday = (month_arg == 0) ? new_reminder->date : date_arg;
+        mktime(&time_info);
+    }
+    else if (month_arg > new_reminder->month) {
+        time_info.tm_mon = month_arg - 1;
+        time_info.tm_mday = date_arg;
+        mktime(&time_info);
+    }
+    else if (month_arg < new_reminder->month && month_arg != 0) {
+        return 0;
+    }
+    else if (date_arg < new_reminder->date && date_arg != 0){
+        return 0;
+    }
+    else {
+        time_info.tm_mday = (date_arg == 0) ? new_reminder->date : date_arg;
+        mktime(&time_info);
+    }
+
+    new_reminder->date = time_info.tm_mday;
+    new_reminder->month = time_info.tm_mon + 1;
+    new_reminder->year = time_info.tm_year + 1900;
+
+    return 1;
 }
 
-// 1
 
+void saveReminder(Reminder* new_reminder) {
 
-int* date_validity(char *date, struct tm time_info) {
-    int dd, mm, yyyy;
-    dd = positif_atoi(date + 0);
-    dd = positif_atoi(date + 1);
-    yyyy = positif_atoi(date + 2);
-
-    if (dd){
-        return (int*)    
-    }
-     else {
-        return NULL;
-    }
-}
-
-
-// typedef enum {Minggu, Senin, Selasa, Rabu, Kamis, Jumat, Sabtu} Eind_DAY;
-// char *hari[] = 
-typedef enum {Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday} Een_DAY;
-char *wday[7] = {"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"};
-char *mon[12] = {
-    "January", "February", "March", "April", "May", "June", 
-    "July", "August", "September", "October", "November", "December"
-};
-
-
-
-void add(char *argv[], int argc, time_t now_time) {
-    struct tm user_time = *localtime(&now_time);
-    Reminder new_reminder;
-
-
-    // reminder add "teks" time_setter;
-    // [0]      [1]  [2]     [3]
+    // load and read file
+    ReminderBox reminder_box;
+    FILE* save_file = fopen("reminder.save", "r+");
     
-    if (argc > 2) {
-        
+    fseek(save_file, 0, SEEK_END);
+    int size = ftell(save_file);
+    rewind(save_file);
+
+    reminder_box.size = size / sizeof(Reminder);
+    reminder_box.reminders = (Reminder *)malloc(sizeof(Reminder) * reminder_box.size);
+
+    fread(reminder_box.reminders, sizeof(Reminder), reminder_box.size, save_file);
+
+    // write new_reminder;
+    Reminder * tmp = (Reminder *)realloc(reminder_box.reminders, sizeof(Reminder)*(reminder_box.size + 1));
+    reminder_box.reminders = tmp;
+    reminder_box.reminders[reminder_box.size] = *new_reminder;
+    reminder_box.size += 1;
+
+    fwrite(reminder_box.reminders, sizeof(Reminder), reminder_box.size, save_file);
+
+    fclose(save_file);
+    free(reminder_box.reminders);
 }
-}
+
+
+// ## main
 
 int main(int argc, char *argv[]) {
     if (argc == 1) {
         usage(argv, BAD_USAGE, "");
     }
 
-    time_t nowTime;
-    time(&nowTime);
+    time_t now_time;
+    time(&now_time);
+    struct tm info_time = *localtime(&now_time);
 
-    if (argc >= 2) {
+    if (argv [1] != NULL) {
+
         if (strcmp(argv[1], "add") == 0) {
-            if (argc > 2) {
-                add(argv, argc, nowTime);
+            if (argv[2] != NULL) {
+                Reminder* new_reminder = (Reminder *)malloc(sizeof(Reminder));
+                new_reminder->date = info_time.tm_mday;
+                new_reminder->month = info_time.tm_mon + 1;
+                new_reminder->year = info_time.tm_year + 1900;
+
+                if (date((argv[3] == NULL) ? "-" : argv[3], now_time, new_reminder) != 0) {
+                    strcpy(new_reminder->note, argv[2]);
+
+                    printf("[note saved] on %d-%d-%d\n", 
+                        new_reminder->date, 
+                        new_reminder->month,
+                        new_reminder->year);
+                    printf("\t%s\n", new_reminder->note);
+
+                    saveReminder(new_reminder);
+                    free(new_reminder);
+                }
+                
             } else {
                 usage(argv, MISSING_ARGUMENT, "add need [note] [options time setter] argument.");
             }

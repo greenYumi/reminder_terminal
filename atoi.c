@@ -67,7 +67,7 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
     else if (month_arg < new_reminder->month && month_arg != 0) {
         return 0;
     }
-    else if (month_arg < new_reminder->date){
+    else if (date_arg < new_reminder->date && date_arg != 0){
         return 0;
     }
     else {
@@ -99,6 +99,5 @@ int main(int argc, char *argv[]) {
     } else {
         printf("err\n");
     }
-
     return 0;
 }
