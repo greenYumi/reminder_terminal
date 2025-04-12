@@ -1,37 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
-#include <ctype.h>
+#include <string.h>
+#include "reminder.h"
 
-typedef char * String;
-
-
-// error hendling;
-
-typedef enum {
-    BAD_USAGE,
-    BAD_OPTION,
-    BAD_ARGUMENT,
-    MISSING_ARGUMENT,
-    BAD_CONTROLLER
-} E_ERROR_FLAG;
 
 void usage(char *argv[], E_ERROR_FLAG, String err_msg);
-
-
-typedef struct {
-    char note[100];
-    int date;
-    int month;
-    int year;
-} Reminder;
-
-typedef struct {
-    int size;
-    Reminder* reminders;
-} ReminderBox;
-
 
 // ### Utility
 
