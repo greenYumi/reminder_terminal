@@ -1,5 +1,5 @@
 typedef struct {
-    char note[100];
+    char lable[50];
     int date;
     int month;
     int year;

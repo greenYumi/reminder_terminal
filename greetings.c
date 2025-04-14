@@ -46,7 +46,7 @@ int checkReminder(ReminderBox* reminder_box, struct tm time_info) {
 int main() {
     time_t now_time = time(NULL);
 
-    ReminderBox* reminder_box = (ReminderBox *)malloc(sizeof(reminder_box));
+    ReminderBox* reminder_box = (ReminderBox *)malloc(sizeof(ReminderBox));
     loadData(reminder_box);
     
     int found_reminder_today = checkReminder(reminder_box, *localtime(&now_time));
@@ -54,6 +54,7 @@ int main() {
         printf("you have reminder%s for today (%d)\n", (found_reminder_today > 1) ? "s" : "", found_reminder_today);
     } 
 
+    free(reminder_box->reminders);
     free(reminder_box);
     return 0;
 }

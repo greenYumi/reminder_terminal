@@ -4,15 +4,6 @@
 #include <string.h>
 #include "reminder.h"
 
-
-#define COMMAND argv[0]
-#define OPTION argv[0]
-#define ARGUMENT argv[0]
-#define LABEL_ARGUMENT argv[0]
-#define CONTROLLER argv[0]
-
-
-
 void usage(char *argv[], E_ERROR_FLAG, String err_msg);
 
 // ### Utility
@@ -90,8 +81,36 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
 }
 
 
-void saveReminder(Reminder* new_reminder) {
+void getLable(char *lable_frame) {
 
+    char c;
+    int max_char = 50;
+    int i;
+
+    for (i=0; i<max_char; i++) {
+        lable_frame[i] = 0;
+    }
+
+    i=0;
+    while ((c = getchar()) != EOF) {
+        if (i == max_char) {
+            printf("lable length can't more than 50 chars\n");
+            exit(9);
+            break;
+        }
+        else if (c == '\n') {
+            break;
+        }
+        else {
+            lable_frame[i] = c;
+            i++;
+        }
+    }
+}
+
+
+void saveReminder(Reminder* new_reminder) {
+    
     // load and read file
     ReminderBox reminder_box;
     FILE* save_file = fopen("reminder.save", "r+");
@@ -99,12 +118,38 @@ void saveReminder(Reminder* new_reminder) {
     fseek(save_file, 0, SEEK_END);
     int size = ftell(save_file);
     rewind(save_file);
-
+    
     reminder_box.size = size / sizeof(Reminder);
     reminder_box.reminders = (Reminder *)malloc(sizeof(Reminder) * reminder_box.size);
-
+    
     fread(reminder_box.reminders, sizeof(Reminder), reminder_box.size, save_file);
+    
+    
+    // lable
+    char lable[50]; 
+    int lable_duplicate = 1;
+    while (lable_duplicate == 1) {
+        printf("lable: ");
+        // fgets(lable, 50, stdin); // contain '\n'
+        getLable(lable);
+        if (reminder_box.size == 0) {
+            break;
+        }
 
+        for (int i=0; i<reminder_box.size; i++) {
+            if (strcmp(lable, reminder_box.reminders[i].lable) == 0) {
+                printf("the same lable already saved\n");
+                break;
+            }
+            else if (strcmp(lable, reminder_box.reminders[i].lable) != 0 && i == reminder_box.size - 1) {
+                lable_duplicate = 0;
+            }
+        }
+    }
+
+    strcpy(new_reminder->lable, lable);
+    printf("lable : %s saved\n", lable);
+    
     // write new_reminder;
     Reminder * tmp = (Reminder *)realloc(reminder_box.reminders, sizeof(Reminder)*(reminder_box.size + 1));
     reminder_box.reminders = tmp;
@@ -133,21 +178,21 @@ int main(int argc, char *argv[]) {
     if (argv [1] != NULL) {
 
         if (strcmp(argv[1], "add") == 0) {
-            if (argv[2] != NULL) {
+            if (argv[3] != NULL) {
                 Reminder* new_reminder = (Reminder *)malloc(sizeof(Reminder));
-                memset(new_reminder, 0, sizeof(int)*3 + sizeof(char)*100);
+                memset(new_reminder, 0, sizeof(int)*3 + sizeof(char)*50);
                 new_reminder->date = info_time.tm_mday;
                 new_reminder->month = info_time.tm_mon + 1;
                 new_reminder->year = info_time.tm_year + 1900;
 
-                if (date((argv[3] == NULL) ? "-" : argv[3], now_time, new_reminder) != 0) {
-                    strcpy(new_reminder->note, argv[2]);
+                if (date((argv[2] == NULL) ? "-" : argv[2], now_time, new_reminder) != 0) {
+                    // strcpy(new_reminder->note, argv[2]);
 
                     printf("[note saved] on %d-%d-%d\n", 
                         new_reminder->date, 
                         new_reminder->month,
                         new_reminder->year);
-                    printf("\t%s\n", new_reminder->note);
+                    // printf("\t%s\n", new_reminder->note);
 
                     saveReminder(new_reminder);
                     free(new_reminder);
