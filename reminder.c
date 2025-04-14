@@ -5,6 +5,14 @@
 #include "reminder.h"
 
 
+#define COMMAND argv[0]
+#define OPTION argv[0]
+#define ARGUMENT argv[0]
+#define LABEL_ARGUMENT argv[0]
+#define CONTROLLER argv[0]
+
+
+
 void usage(char *argv[], E_ERROR_FLAG, String err_msg);
 
 // ### Utility
@@ -103,6 +111,7 @@ void saveReminder(Reminder* new_reminder) {
     reminder_box.reminders[reminder_box.size] = *new_reminder;
     reminder_box.size += 1;
 
+    rewind(save_file);
     fwrite(reminder_box.reminders, sizeof(Reminder), reminder_box.size, save_file);
 
     fclose(save_file);
@@ -126,6 +135,7 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[1], "add") == 0) {
             if (argv[2] != NULL) {
                 Reminder* new_reminder = (Reminder *)malloc(sizeof(Reminder));
+                memset(new_reminder, 0, sizeof(int)*3 + sizeof(char)*100);
                 new_reminder->date = info_time.tm_mday;
                 new_reminder->month = info_time.tm_mon + 1;
                 new_reminder->year = info_time.tm_year + 1900;
