@@ -5,6 +5,7 @@
 #include "reminder.h"
 
 #define NOT_EMPTY 0
+#define FAILED -1
 
 void usage(char *argv[], E_ERROR_FLAG, String err_msg);
 
@@ -12,7 +13,7 @@ void usage(char *argv[], E_ERROR_FLAG, String err_msg);
 
 int date( char *date, time_t now_time, Reminder* new_reminder) {
     if((date[0] < 48 || date[0] > 57) && (date[0] != '-')) {
-        return 0;
+        return -1;
     }
 
     struct tm time_info = *localtime(&now_time);
@@ -23,7 +24,7 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
     while(date[i] != '\0') {
         if (date[i] == '-') {
             if (j > 2) {
-                return 0;
+                return -1;
             }
             j++;
             i++;
@@ -34,7 +35,7 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
             i++;
         }
         else {
-            return 0;
+            return -1;
         }
     }
 
@@ -44,14 +45,14 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
     year_arg = ddmmyyyy[2];
 
     if (date_arg < 0 || date_arg  > 31) {
-        return 1;
+        return -1;
     }
     if (month_arg < 0 || month_arg > 12) {
-        return 1;
+        return -1;
     }
     // if user gave the year but past by current year, definitely error
     if (year_arg != 0 && year_arg < time_info.tm_year + 1900) {
-        return 1;
+        return -1;
     }
 
     if (year_arg > time_info.tm_year + 1900) {
@@ -66,10 +67,10 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
         mktime(&time_info);
     }
     else if (month_arg < new_reminder->month && month_arg != 0) {
-        return 1;
+        return -1;
     }
     else if (date_arg < new_reminder->date && date_arg != 0){
-        return 1;
+        return -1;
     }
     else {
         time_info.tm_mday = (date_arg == 0) ? new_reminder->date : date_arg;
@@ -80,7 +81,8 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
     new_reminder->month = time_info.tm_mon + 1;
     new_reminder->year = time_info.tm_year + 1900;
 
-    return 1;
+    // sucess must be return 0;
+    return 0;
 }
 
 
@@ -165,6 +167,20 @@ void saveReminder(Reminder* new_reminder) {
 
     fclose(save_file);
     free(reminder_box.reminders);
+
+    // write note in .reminders with label as title
+    char path[13+50];
+    sprintf(path, "./.reminders/%s", label);
+    FILE* note_file = fopen(path, "w");
+    fwrite("ini contoh note", 50, 1, note_file);
+    fclose(note_file);
+
+    char str[17];
+    FILE* file = fopen(path, "r");
+    fread(str, 17, 1, file);
+    fclose(file);
+    printf("Read after save in ./reminders:\n%s\n", str);
+
 }
 
 
@@ -268,14 +284,14 @@ int main(int argc, char *argv[]) {
             new_reminder->month = current_time.tm_mon + 1;
             new_reminder->year = current_time.tm_year + 1900;
 
-            if (date((argv[2] == NULL) ? "-" : argv[2], now_time, new_reminder) != 0) 
+            if (date((argv[2] == NULL) ? "-" : argv[2], now_time, new_reminder) == 0) {
 
                 printf("[note saved] on %d-%d-%d\n", 
                     new_reminder->date, 
                     new_reminder->month,
                     new_reminder->year);
 
-                saveReminder(new_reminder);
+                // saveReminder(new_reminder);
                 free(new_reminder);
             }
         }
@@ -291,7 +307,7 @@ int main(int argc, char *argv[]) {
             lookup_reminder->month = current_time.tm_mon + 1;
             lookup_reminder->year = current_time.tm_year + 1900;
 
-            if(date((argv[2] == NULL) ? "-" : argv[2], now_time, lookup_reminder) != 0) {
+            if(date((argv[2] == NULL) ? "-" : argv[2], now_time, lookup_reminder) == 0) {
                 lookup(lookup_reminder,lookup_reminder_box, current_time);
 
                 //  ** some operation **
@@ -306,6 +322,7 @@ int main(int argc, char *argv[]) {
         else {
             usage(argv, BAD_OPTION, "");
         }
+    }
 }
 
 
