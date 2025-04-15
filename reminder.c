@@ -44,13 +44,14 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
     year_arg = ddmmyyyy[2];
 
     if (date_arg < 0 || date_arg  > 31) {
-        return 0;
+        return 1;
     }
     if (month_arg < 0 || month_arg > 12) {
-        return 0;
+        return 1;
     }
+    // if user gave the year but past by current year, definitely error
     if (year_arg != 0 && year_arg < time_info.tm_year + 1900) {
-        return 0;
+        return 1;
     }
 
     if (year_arg > time_info.tm_year + 1900) {
@@ -65,10 +66,10 @@ int date( char *date, time_t now_time, Reminder* new_reminder) {
         mktime(&time_info);
     }
     else if (month_arg < new_reminder->month && month_arg != 0) {
-        return 0;
+        return 1;
     }
     else if (date_arg < new_reminder->date && date_arg != 0){
-        return 0;
+        return 1;
     }
     else {
         time_info.tm_mday = (date_arg == 0) ? new_reminder->date : date_arg;
@@ -128,7 +129,7 @@ void saveReminder(Reminder* new_reminder) {
     fread(reminder_box.reminders, sizeof(Reminder), reminder_box.size, save_file);
     
     
-    // lable
+    // label
     char label[50]; 
     int lable_duplicate = 1;
     while (lable_duplicate == 1) {
@@ -184,18 +185,66 @@ void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct 
                     lookup_reminder_box->reminders = (Reminder *)malloc(sizeof(Reminder) * lookup_reminder_box->size);
                     fread(lookup_reminder_box->reminders, sizeof(Reminder), lookup_reminder_box->size, saved_file);
 
-                    printf("note: %d-%d-%d\n", 
+                    printf("note: %d-%d-%d\n\n", 
                                 lookup_reminder->date,
                                 lookup_reminder->month,
-                                lookup_reminder->month);
+                                lookup_reminder->year);
                     for(int i=0; i<lookup_reminder_box->size; i++) {
                         printf("[%d] %s\n", i+1, lookup_reminder_box->reminders[i].label);
                     }
-                    fclose(saved_file);
-            }
+                }
+
+                fclose(saved_file);
+    }
+
+    else if (fseek(file, 0, SEEK_END) == NOT_EMPTY) {
+        size_t size = ftell(file) / sizeof(Reminder);
+        rewind(file);
+
+        Reminder* tmp_reminder = (Reminder *)malloc(sizeof(Reminder) * size);
+        fread(tmp_reminder, sizeof(Reminder), size, file);
+
+        for (int i=0; i<size; i++) {
+            if (    tmp_reminder[i].date == lookup_reminder->date
+                &&  tmp_reminder[i].month == lookup_reminder->month
+                &&  tmp_reminder[i].year == lookup_reminder->year) {
+
+                        lookup_reminder_box->size++;
+                        Reminder* tmp = (Reminder *)realloc(lookup_reminder_box->reminders, sizeof(Reminder) * lookup_reminder_box->size);
+                        lookup_reminder_box->reminders = tmp;
+                        lookup_reminder_box->reminders[(lookup_reminder_box->size)-1] = tmp_reminder[i];
+                }
         }
 
+        free(tmp_reminder);
+
+        // writing data in file for `see` command;
+        FILE* lookup_file = fopen("lookup.see", "w");
+        fwrite(lookup_reminder_box->reminders, sizeof(Reminder), lookup_reminder_box->size, lookup_file);
+        fclose(lookup_file);  
+
+        if (lookup_reminder_box->size == 0) {
+            printf("note with date %d-%d-%d not found\n", 
+                lookup_reminder->date,
+                lookup_reminder->month,
+                lookup_reminder->year);
+                return;
+        }
+
+        printf("note: %d-%d-%d\n\n", 
+            lookup_reminder->date,
+            lookup_reminder->month,
+            lookup_reminder->year);
+        for(int i=0; i<lookup_reminder_box->size; i++) {
+        printf("[%d] %s\n", i+1, lookup_reminder_box->reminders[i].label);
+        }
+    }
+    else {
+        printf("Not saved anything yet\n.");
+    }
+
     fclose(file);
+    
 }
 
 
@@ -219,14 +268,12 @@ int main(int argc, char *argv[]) {
             new_reminder->month = current_time.tm_mon + 1;
             new_reminder->year = current_time.tm_year + 1900;
 
-            if (date((argv[2] == NULL) ? "-" : argv[2], now_time, new_reminder) != 0) {
-                // strcpy(new_reminder->note, argv[2]);
+            if (date((argv[2] == NULL) ? "-" : argv[2], now_time, new_reminder) != 0) 
 
                 printf("[note saved] on %d-%d-%d\n", 
                     new_reminder->date, 
                     new_reminder->month,
                     new_reminder->year);
-                // printf("\t%s\n", new_reminder->note);
 
                 saveReminder(new_reminder);
                 free(new_reminder);
@@ -234,7 +281,7 @@ int main(int argc, char *argv[]) {
         }
 
         else if(strcmp(argv[1], "lookup") == 0) {
-            // FIXME: -RIO, better find a way which we avooid using Reminder to saving
+            // FIXME: -ME, better find a way which we avoid using Reminder to saving
             // space (char)[50] in this structure.
             Reminder* lookup_reminder = (Reminder *)malloc(sizeof(Reminder));
             ReminderBox* lookup_reminder_box = (ReminderBox *)malloc(sizeof(ReminderBox));
@@ -259,8 +306,8 @@ int main(int argc, char *argv[]) {
         else {
             usage(argv, BAD_OPTION, "");
         }
-    }
 }
+
 
 
 void usage(char *argv[], E_ERROR_FLAG flag, String err_msg) {
