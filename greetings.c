@@ -24,6 +24,7 @@ void loadData(ReminderBox* reminder_box) {
 
 int checkReminder(ReminderBox* reminder_box, struct tm time_info) {
     int found = 0;
+    
     FILE* file = fopen("reminder_today.found", "w+");
     
     for (int i=0; i<reminder_box->size; i++) {
@@ -34,7 +35,6 @@ int checkReminder(ReminderBox* reminder_box, struct tm time_info) {
                     found++;
                     fwrite(reminder_box->reminders+i, sizeof(Reminder), 1, file);
             }
-
     }
 
     fclose(file);

@@ -1,5 +1,8 @@
 #include "struct_reminder.c"
 
+
+#define NOT_EMPTY 0
+
 typedef char * String;
 
 typedef enum {
