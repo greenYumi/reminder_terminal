@@ -45,16 +45,49 @@ int checkReminder(ReminderBox* reminder_box, struct tm time_info) {
 
 int main() {
     time_t now_time = time(NULL);
+    struct tm time_info = *(localtime(&now_time));
 
     ReminderBox* reminder_box = (ReminderBox *)malloc(sizeof(ReminderBox));
     loadData(reminder_box);
     
     int found_reminder_today = checkReminder(reminder_box, *localtime(&now_time));
-    if (found_reminder_today) {
-        printf("you have reminder%s for today (%d)\n", (found_reminder_today > 1) ? "s" : "", found_reminder_today);
-    } 
-
     free(reminder_box->reminders);
     free(reminder_box);
+
+    String user_name = (getenv("USER") == NULL) ? "Anon" : getenv("USER");
+    String day_time;
+    int now_hour = time_info.tm_hour;
+    int now_min = time_info.tm_min;
+
+    int dini_hari_f = 0;
+    if (now_hour <= 2 && now_min <= 59) {
+        dini_hari_f = 1;
+    }
+    else if (now_hour <= 9 && now_min <= 59) {
+        day_time = "pagi";
+    }
+    else if (now_hour <= 13 && now_min <= 59) {
+        day_time = "siang";
+    }
+    else if (now_hour <= 17 && now_min <= 59) {
+        day_time = "sore";
+    }
+    else {
+        day_time = "malam";
+    }
+
+    if (dini_hari_f) {
+        printf("Halo, %s.\n", user_name);
+        printf("Sekarang adalah Dini hari.\n");
+    }
+    else {
+        printf("Selamat %s, %s\n", day_time, user_name);
+    }
+    printf("(%s) %d %s\n", wday[time_info.tm_wday], time_info.tm_mday, mon[time_info.tm_mon]);
+
+    if (found_reminder_today != 0) {
+        printf("[*%d], gunakan `reminder lookup`.\n", found_reminder_today);
+    }
+
     return 0;
 }

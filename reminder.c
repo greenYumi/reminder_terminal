@@ -115,6 +115,39 @@ void getLable(char *lable_frame) {
 }
 
 
+void noteTaking(String note) {
+    // what's the error case?
+
+    char c;
+    int i=0;
+    while((c = getchar()) != EOF) {
+        if (i > 100) {
+            printf("char exceed 100, bad input.\n");
+            // loop or exit?
+            exit(-1);
+        }
+        else if (c == '\n') {
+            if (i==0) {
+                strcpy(note, "(leaved blank)");
+                break;
+            }
+            note[i] = '\0';
+            break;
+        }
+        else {
+            note[i] = c;
+            i++;
+        }
+    }
+
+    // is this even necessary?
+    for (; i<=100; i++) {
+        note[i] = 0;
+    }
+
+} 
+
+
 void saveReminder(Reminder* new_reminder) {
     
     // load and read file
@@ -155,7 +188,15 @@ void saveReminder(Reminder* new_reminder) {
 
     strcpy(new_reminder->label, label);
     printf("lable : %s saved\n", label);
+
+
+    // taking note;
+    // note max. 100 char;
+    char note[101];
+    printf("note: ");
+    noteTaking(note);
     
+
     // write new_reminder;
     Reminder * tmp = (Reminder *)realloc(reminder_box.reminders, sizeof(Reminder)*(reminder_box.size + 1));
     reminder_box.reminders = tmp;
@@ -172,15 +213,10 @@ void saveReminder(Reminder* new_reminder) {
     char path[13+50];
     sprintf(path, "./.reminders/%s", label);
     FILE* note_file = fopen(path, "w");
-    fwrite("ini contoh note", 50, 1, note_file);
+    printf("...saving note\n");
+    fwrite(note, 100, 1, note_file);
     fclose(note_file);
-
-    char str[17];
-    FILE* file = fopen(path, "r");
-    fread(str, 17, 1, file);
-    fclose(file);
-    printf("Read after save in ./reminders:\n%s\n", str);
-
+    printf("(saving complete)\n");
 }
 
 
@@ -291,7 +327,7 @@ int main(int argc, char *argv[]) {
                     new_reminder->month,
                     new_reminder->year);
 
-                // saveReminder(new_reminder);
+                saveReminder(new_reminder);
                 free(new_reminder);
             }
         }

@@ -5,10 +5,17 @@
 
 typedef char * String;
 
-typedef enum {
+const typedef enum {
     BAD_USAGE,
     BAD_OPTION,
     BAD_ARGUMENT,
     MISSING_ARGUMENT,
     BAD_CONTROLLER
 } E_ERROR_FLAG;
+
+const String wday[7] = {"Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"};
+const String mon[12] = {
+    "Januari", "Februari", "Maret",
+    "April", "Mei", "Juni",
+    "Juli", "Agustus", "September",
+    "Oktober", "November", "Desember"};
