@@ -6,7 +6,7 @@
 
 
 void loadData(ReminderBox* reminder_box) {
-    FILE* file = fopen("reminder.save", "r");
+    FILE* file = fopen("/home/yumiodd/code/c/time-2/reminder.save", "r");
 
     fseek(file, 0, SEEK_END);
     size_t size = ftell(file);
@@ -25,7 +25,7 @@ void loadData(ReminderBox* reminder_box) {
 int checkReminder(ReminderBox* reminder_box, struct tm time_info) {
     int found = 0;
     
-    FILE* file = fopen("reminder_today.found", "w+");
+    FILE* file = fopen("/home/yumiodd/code/c/time-2/reminder_today.found", "w+");
     
     for (int i=0; i<reminder_box->size; i++) {
         if (    reminder_box->reminders[i].date == time_info.tm_mday
@@ -83,11 +83,12 @@ int main() {
     else {
         printf("Selamat %s, %s\n", day_time, user_name);
     }
-    printf("(%s) %d %s\n", wday[time_info.tm_wday], time_info.tm_mday, mon[time_info.tm_mon]);
+    printf("(%s) %d %s \t", wday[time_info.tm_wday], time_info.tm_mday, mon[time_info.tm_mon]);
 
     if (found_reminder_today != 0) {
-        printf("[*%d], gunakan `reminder lookup`.\n", found_reminder_today);
+        printf("(*%d), gunakan `reminder lookup`.", found_reminder_today);
     }
+    printf("\n");
 
     return 0;
 }

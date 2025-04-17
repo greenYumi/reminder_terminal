@@ -152,7 +152,7 @@ void saveReminder(Reminder* new_reminder) {
     
     // load and read file
     ReminderBox reminder_box;
-    FILE* save_file = fopen("reminder.save", "r+");
+    FILE* save_file = fopen("/home/yumiodd/code/c/time-2/reminder.save", "r+");
     
     fseek(save_file, 0, SEEK_END);
     int size = ftell(save_file);
@@ -210,8 +210,8 @@ void saveReminder(Reminder* new_reminder) {
     free(reminder_box.reminders);
 
     // write note in .reminders with label as title
-    char path[13+50];
-    sprintf(path, "./.reminders/%s", label);
+    char path[39+50];
+    sprintf(path, "/home/yumiodd/code/c/time-2/.reminders/%s", label);
     FILE* note_file = fopen(path, "w");
     printf("...saving note\n");
     fwrite(note, 100, 1, note_file);
@@ -221,13 +221,13 @@ void saveReminder(Reminder* new_reminder) {
 
 
 void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct tm current_time) {
-    FILE* file = fopen("reminder.save", "r");
+    FILE* file = fopen("/home/yumiodd/code/c/time-2/reminder.save", "r");
 
     if (    lookup_reminder->date == current_time.tm_mday
         &&  lookup_reminder->month == current_time.tm_mon + 1
         &&  lookup_reminder->year == current_time.tm_year + 1900) {
 
-                FILE* saved_file = fopen("reminder_today.found", "r");
+                FILE* saved_file = fopen("/home/yumiodd/code/c/time-2/reminder_today.found", "r");
 
                 if (fseek(saved_file, 0, SEEK_END) == NOT_EMPTY) {
                     size_t size = ftell(saved_file);
@@ -271,7 +271,7 @@ void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct 
         free(tmp_reminder);
 
         // writing data in file for `see` command;
-        FILE* lookup_file = fopen("lookup.see", "w");
+        FILE* lookup_file = fopen("/home/yumiodd/code/c/time-2/lookup.see", "w");
         fwrite(lookup_reminder_box->reminders, sizeof(Reminder), lookup_reminder_box->size, lookup_file);
         fclose(lookup_file);  
 
