@@ -130,6 +130,7 @@ void noteTaking(String note) {
             if (i==0) {
                 strcpy(note, "(leaved blank)");
                 printf("leave blank\n");
+                i = 15;
                 break;
             }
             note[i] = '\0';
@@ -321,7 +322,7 @@ void seeNote(int index) {
         exit(-1);
     }
 
-    if (index-1 > size) {
+    if (index > size) {
         // or bad usage
         fprintf(stderr, "bad index, try update lookup buffer\n");
         exit(-1);
