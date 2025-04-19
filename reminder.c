@@ -129,6 +129,7 @@ void noteTaking(String note) {
         else if (c == '\n') {
             if (i==0) {
                 strcpy(note, "(leaved blank)");
+                printf("leave blank\n");
                 break;
             }
             note[i] = '\0';
@@ -246,7 +247,12 @@ void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct 
                     }
                 }
 
+                
                 fclose(saved_file);
+                // writing data in file for `see` command;
+                FILE* lookup_file = fopen("/home/yumiodd/code/c/time-2/lookup.see", "w");
+                fwrite(lookup_reminder_box->reminders, sizeof(Reminder), lookup_reminder_box->size, lookup_file);
+                fclose(lookup_file);
     }
 
     else if (fseek(file, 0, SEEK_END) == NOT_EMPTY) {
@@ -297,6 +303,43 @@ void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct 
 
     fclose(file);
     
+}
+
+
+void seeNote(int index) {
+    FILE* file = fopen("/home/yumiodd/code/c/time-2/lookup.see", "r");
+
+    ReminderBox reminder_box;
+    memset(&reminder_box, 0, sizeof(ReminderBox));
+
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file) / sizeof(Reminder);
+    rewind(file);
+    if(size == 0) {
+        // or bad usage
+        fprintf(stderr, "file empty please lookup first :)\n");
+        exit(-1);
+    }
+
+    if (index-1 > size) {
+        // or bad usage
+        fprintf(stderr, "bad index, try update lookup buffer\n");
+        exit(-1);
+    }
+
+    reminder_box.size = size;
+    reminder_box.reminders = (Reminder *)malloc(sizeof(Reminder) * size);
+    fread(reminder_box.reminders, sizeof(Reminder), size, file);
+    fclose(file);
+
+    char fileName[90];
+    sprintf(fileName, "/home/yumiodd/code/c/time-2/.reminders/%s", reminder_box.reminders[index-1].label);
+    FILE* noteFile = fopen(fileName, "r");
+    char note[101];
+    fread(note, 1, 101, noteFile);
+    printf("%s\n", note);
+    fclose(noteFile);
+
 }
 
 
@@ -352,7 +395,18 @@ int main(int argc, char *argv[]) {
             }
         }
         else if ((strcmp(argv[1], "see") == 0)) {
-            printf("see option still in progress\n");
+            if (argv[2] == NULL) {
+                usage(argv, BAD_ARGUMENT, "see need an index\n");
+            }
+
+            int index;
+            if ((index = strToInt(argv[2])) != FAILED) {
+                seeNote(index);
+            } 
+            else {
+                // err
+                usage(argv, BAD_CONTROLLER, "invalid index");
+            }
         }
 
         else {
@@ -393,5 +447,6 @@ void usage(char *argv[], E_ERROR_FLAG flag, String err_msg) {
         }
     }
     
+    exit(-99);
 } 
 

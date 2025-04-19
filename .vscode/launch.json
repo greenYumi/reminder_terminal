@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/reminder",
-            "args": ["add"],
+            "args": ["see", "1"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

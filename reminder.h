@@ -19,3 +19,23 @@ const String mon[12] = {
     "April", "Mei", "Juni",
     "Juli", "Agustus", "September",
     "Oktober", "November", "Desember"};
+
+
+int strToInt(String arg) {
+    int i = 0;
+    int size = 0;
+
+    while (arg[i] != '\0') {
+        if (arg[i] >= 48 && arg[i] <= 57 ) {
+            size *= 10;
+            size += arg[i] - '0';
+            i++;
+        }
+        else {
+            return -1;
+        }
+    }
+
+    return size;
+    
+}
