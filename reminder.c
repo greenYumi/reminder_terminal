@@ -219,8 +219,9 @@ void saveReminder(Reminder* new_reminder, String current_path) {
     free(reminder_box.reminders);
 
     // write note in .reminders with label as title
+
     char path[999];
-    sprintf(path, "%s/.reminders/%s", current_path, label);
+    sprintf(path, "%s/reminders/%s", current_path, label);
     FILE* note_file = fopen(path, "w");
     printf("...saving note\n");
     fwrite(note, 100, 1, note_file);
@@ -350,7 +351,7 @@ void seeNote(int index, String current_path) {
     fclose(file);
 
     char fileName[999];
-    sprintf(fileName, "%s/.reminders/%s",current_path, reminder_box.reminders[index-1].label);
+    sprintf(fileName, "%s/reminders/%s",current_path, reminder_box.reminders[index-1].label);
     FILE* noteFile = fopen(fileName, "r");
     char note[101];
     fread(note, 1, 101, noteFile);
