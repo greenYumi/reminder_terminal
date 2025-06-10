@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include <libgen.h>
 #include "reminder.h"
 
 
-void loadData(ReminderBox* reminder_box) {
-    FILE* file = fopen("/home/yumiodd/code/c/time-2/reminder.save", "r");
+void loadData(ReminderBox* reminder_box, String current_path) {
+    char path[999];
+    sprintf(path, "%s/reminder.save", current_path);
+    FILE* file = fopen(path, "r");
 
     fseek(file, 0, SEEK_END);
     size_t size = ftell(file);
@@ -22,10 +26,13 @@ void loadData(ReminderBox* reminder_box) {
 }
 
 
-int checkReminder(ReminderBox* reminder_box, struct tm time_info) {
+int checkReminder(ReminderBox* reminder_box, struct tm time_info, String current_path) {
     int found = 0;
     
-    FILE* file = fopen("/home/yumiodd/code/c/time-2/reminder_today.found", "w+");
+    char path[999];
+    sprintf(path, "%s/reminder_today.found", current_path);
+
+    FILE* file = fopen(path, "w+");
     
     for (int i=0; i<reminder_box->size; i++) {
         if (    reminder_box->reminders[i].date == time_info.tm_mday
@@ -48,12 +55,26 @@ int main() {
     struct tm time_info = *(localtime(&now_time));
 
     ReminderBox* reminder_box = (ReminderBox *)malloc(sizeof(ReminderBox));
-    loadData(reminder_box);
     
-    int found_reminder_today = checkReminder(reminder_box, *localtime(&now_time));
+    
+    char current_path[999];
+    ssize_t len = readlink("/proc/self/exe", current_path, sizeof(current_path) - 1);
+
+    if (len != -1) {
+        current_path[len] = '\0';
+        char *dir = dirname(current_path);
+        sprintf(current_path, dir);
+    }
+    else {
+        return -1;
+    }
+
+    loadData(reminder_box, current_path);
+    
+    int found_reminder_today = checkReminder(reminder_box, *localtime(&now_time), current_path);
     free(reminder_box->reminders);
     free(reminder_box);
-
+    
     String user_name = (getenv("USER") == NULL) ? "Anon" : getenv("USER");
     String day_time;
     int now_hour = time_info.tm_hour;

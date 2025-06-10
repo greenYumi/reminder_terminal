@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <unistd.h>
+#include <libgen.h>
 #include "reminder.h"
 
 #define NOT_EMPTY 0
 #define FAILED -1
+
+
 
 void usage(char *argv[], E_ERROR_FLAG, String err_msg);
 
@@ -150,11 +154,14 @@ void noteTaking(String note) {
 } 
 
 
-void saveReminder(Reminder* new_reminder) {
+void saveReminder(Reminder* new_reminder, String current_path) {
     
     // load and read file
     ReminderBox reminder_box;
-    FILE* save_file = fopen("/home/yumiodd/code/c/time-2/reminder.save", "r+");
+
+    char path1[999];
+    sprintf(path1, "%s/reminder.save", current_path);
+    FILE* save_file = fopen(path1, "r+");
     
     fseek(save_file, 0, SEEK_END);
     int size = ftell(save_file);
@@ -212,8 +219,8 @@ void saveReminder(Reminder* new_reminder) {
     free(reminder_box.reminders);
 
     // write note in .reminders with label as title
-    char path[39+50];
-    sprintf(path, "/home/yumiodd/code/c/time-2/.reminders/%s", label);
+    char path[999];
+    sprintf(path, "%s/.reminders/%s", current_path, label);
     FILE* note_file = fopen(path, "w");
     printf("...saving note\n");
     fwrite(note, 100, 1, note_file);
@@ -222,14 +229,18 @@ void saveReminder(Reminder* new_reminder) {
 }
 
 
-void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct tm current_time) {
-    FILE* file = fopen("/home/yumiodd/code/c/time-2/reminder.save", "r");
+void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct tm current_time, String current_path) {
+    char path[999];
+    sprintf(path, "%s/reminder.save", current_path);
+    FILE* file = fopen(path, "r");
 
     if (    lookup_reminder->date == current_time.tm_mday
         &&  lookup_reminder->month == current_time.tm_mon + 1
         &&  lookup_reminder->year == current_time.tm_year + 1900) {
 
-                FILE* saved_file = fopen("/home/yumiodd/code/c/time-2/reminder_today.found", "r");
+                char path1[999];
+                sprintf(path1, "%s/reminder_today.found", current_path);
+                FILE* saved_file = fopen(path1, "r");
 
                 if (fseek(saved_file, 0, SEEK_END) == NOT_EMPTY) {
                     size_t size = ftell(saved_file);
@@ -251,7 +262,9 @@ void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct 
                 
                 fclose(saved_file);
                 // writing data in file for `see` command;
-                FILE* lookup_file = fopen("/home/yumiodd/code/c/time-2/lookup.see", "w");
+                char path2[999];
+                sprintf(path2, "%s/lookup.see", current_path);
+                FILE* lookup_file = fopen(path2, "w");
                 fwrite(lookup_reminder_box->reminders, sizeof(Reminder), lookup_reminder_box->size, lookup_file);
                 fclose(lookup_file);
     }
@@ -278,7 +291,8 @@ void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct 
         free(tmp_reminder);
 
         // writing data in file for `see` command;
-        FILE* lookup_file = fopen("/home/yumiodd/code/c/time-2/lookup.see", "w");
+        sprintf(path, "%s/lookup.see", current_path);
+        FILE* lookup_file = fopen(path, "w");
         fwrite(lookup_reminder_box->reminders, sizeof(Reminder), lookup_reminder_box->size, lookup_file);
         fclose(lookup_file);  
 
@@ -307,8 +321,10 @@ void lookup(Reminder* lookup_reminder, ReminderBox* lookup_reminder_box, struct 
 }
 
 
-void seeNote(int index) {
-    FILE* file = fopen("/home/yumiodd/code/c/time-2/lookup.see", "r");
+void seeNote(int index, String current_path) {
+    char path[999];
+    sprintf(path, "%s/lookup.see", current_path);
+    FILE* file = fopen(path, "r");
 
     ReminderBox reminder_box;
     memset(&reminder_box, 0, sizeof(ReminderBox));
@@ -333,8 +349,8 @@ void seeNote(int index) {
     fread(reminder_box.reminders, sizeof(Reminder), size, file);
     fclose(file);
 
-    char fileName[90];
-    sprintf(fileName, "/home/yumiodd/code/c/time-2/.reminders/%s", reminder_box.reminders[index-1].label);
+    char fileName[999];
+    sprintf(fileName, "%s/.reminders/%s",current_path, reminder_box.reminders[index-1].label);
     FILE* noteFile = fopen(fileName, "r");
     char note[101];
     fread(note, 1, 101, noteFile);
@@ -354,6 +370,17 @@ int main(int argc, char *argv[]) {
     time_t now_time;
     time(&now_time);
     struct tm current_time = *localtime(&now_time);
+    
+    char current_path[999];
+    ssize_t len = readlink("/proc/self/exe", current_path, sizeof(current_path) - 1);
+    if (len != -1) {
+        current_path[len] = '\0';
+        char *dir = dirname(current_path);
+        sprintf(current_path, dir);
+    }
+    else {
+        return -1;
+    }
 
     if (argv [1] != NULL) {
 
@@ -370,8 +397,8 @@ int main(int argc, char *argv[]) {
                     new_reminder->date, 
                     new_reminder->month,
                     new_reminder->year);
-
-                saveReminder(new_reminder);
+                
+                saveReminder(new_reminder, current_path);
                 free(new_reminder);
             }
         }
@@ -388,7 +415,7 @@ int main(int argc, char *argv[]) {
             lookup_reminder->year = current_time.tm_year + 1900;
 
             if(date((argv[2] == NULL) ? "-" : argv[2], now_time, lookup_reminder) == 0) {
-                lookup(lookup_reminder,lookup_reminder_box, current_time);
+                lookup(lookup_reminder,lookup_reminder_box, current_time, current_path);
 
                 //  ** some operation **
 
@@ -402,7 +429,7 @@ int main(int argc, char *argv[]) {
 
             int index;
             if ((index = strToInt(argv[2])) != FAILED) {
-                seeNote(index);
+                seeNote(index, current_path);
             } 
             else {
                 // err
